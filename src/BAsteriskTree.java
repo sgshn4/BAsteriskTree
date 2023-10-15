@@ -22,7 +22,6 @@ public class BAsteriskTree {
     }
 
 
-
     // Поиск ключа
     private Node search(Node x, int key) {
         int i = 0;
@@ -42,6 +41,7 @@ public class BAsteriskTree {
             return search(x.child[i], key);
         }
     }
+
 
     // Разбиение узла
     private void split(Node x, int pos, Node y) {
@@ -140,8 +140,33 @@ public class BAsteriskTree {
         }
     }
 
+    public void remove(int k) {
+        if (contain(k)) {
+            Node removable = search(root, k);
+            if (removable.isLeaf) {
+                if (removable == root) {
+                    root = null;
+                    return;
+                }
+                int shift = 0;
+                for (int i = 0; i < removable.keyCount; i++) {
+                    if (removable.key[i] == k) {
+                        shift++;
+                        removable.keyCount--;
+                        if (i == removable.keyCount - 1) {
+                            removable.key[i] = 0;
+                        }
+                    }
+                    removable.key[i] = removable.key[i + shift];
+                }
+            }
+        } else {
+            System.err.println("Key " + k + " not founded.");
+        }
+    }
+
     public static void main(String[] args) {
-        BAsteriskTree b = new BAsteriskTree(3);
+        BAsteriskTree b = new BAsteriskTree(4);
         b.insert(8);
         b.insert(9);
         b.insert(10);
@@ -152,6 +177,7 @@ public class BAsteriskTree {
         b.insert(21);
         b.insert(35);
         b.insert(1);
+        b.remove(15);
 
         b.show();
 
