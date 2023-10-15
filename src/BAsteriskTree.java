@@ -2,16 +2,17 @@ public class BAsteriskTree {
 
     private int t;
     private Node root;
+    private int maxCountKeys;
 
     //Node
     public class Node {
-        int n;
+        int keyCound;
         int key[] = new int[2 * t - 1];
         Node child[] = new Node[2 * t];
         boolean isLeaf = true;
 
         public int find(int key) {
-            for (int i = 0; i < this.n; i++) {
+            for (int i = 0; i < this.keyCound; i++) {
                 if (this.key[i] == key) {
                     return i;
                 }
@@ -23,8 +24,9 @@ public class BAsteriskTree {
     public BAsteriskTree(int t) {
         this.t = t;
         root = new Node();
-        root.n = 0;
+        root.keyCound = 0;
         root.isLeaf = true;
+        this.maxCountKeys = (t / 3) * 2;
     }
 
 
@@ -34,7 +36,7 @@ public class BAsteriskTree {
         int i = 0;
         if (x == null)
             return x;
-        for (i = 0; i < x.n; i++) {
+        for (i = 0; i < x.keyCound; i++) {
             if (key < x.key[i]) {
                 break;
             }
@@ -53,36 +55,36 @@ public class BAsteriskTree {
     private void split(Node x, int pos, Node y) {
         Node z = new Node();
         z.isLeaf = y.isLeaf;
-        z.n = t - 1;
-        for (int j = 0; j < t - 1; j++) {
-            z.key[j] = y.key[j + t];
+        z.keyCound = maxCountKeys - 1;
+        for (int j = 0; j < maxCountKeys - 1; j++) {
+            z.key[j] = y.key[j + maxCountKeys];
         }
         if (!y.isLeaf) {
-            for (int j = 0; j < t; j++) {
-                z.child[j] = y.child[j + t];
+            for (int j = 0; j < maxCountKeys; j++) {
+                z.child[j] = y.child[j + maxCountKeys];
             }
         }
-        y.n = t - 1;
-        for (int j = x.n; j >= pos + 1; j--) {
+        y.keyCound = maxCountKeys - 1;
+        for (int j = x.keyCound; j >= pos + 1; j--) {
             x.child[j + 1] = x.child[j];
         }
         x.child[pos + 1] = z;
 
-        for (int j = x.n - 1; j >= pos; j--) {
+        for (int j = x.keyCound - 1; j >= pos; j--) {
             x.key[j + 1] = x.key[j];
         }
-        x.key[pos] = y.key[t - 1];
-        x.n = x.n + 1;
+        x.key[pos] = y.key[maxCountKeys - 1];
+        x.keyCound = x.keyCound + 1;
     }
 
     // Вставка значения
     public void insert(int key) {
         Node r = root;
-        if (r.n == 2 * t - 1) {
+        if (r.keyCound == 2 * maxCountKeys - 1) {
             Node s = new Node();
             root = s;
             s.isLeaf = false;
-            s.n = 0;
+            s.keyCound = 0;
             s.child[0] = r;
             split(s, 0, r);
             insertValue(s, key);
@@ -95,19 +97,19 @@ public class BAsteriskTree {
     private void insertValue(Node x, int k) {
         if (x.isLeaf) {
             int i = 0;
-            for (i = x.n - 1; i >= 0 && k < x.key[i]; i--) {
+            for (i = x.keyCound - 1; i >= 0 && k < x.key[i]; i--) {
                 x.key[i + 1] = x.key[i];
             }
             x.key[i + 1] = k;
-            x.n = x.n + 1;
+            x.keyCound = x.keyCound + 1;
         } else {
             int i = 0;
-            for (i = x.n - 1; i >= 0 && k < x.key[i]; i--) {
+            for (i = x.keyCound - 1; i >= 0 && k < x.key[i]; i--) {
             }
             ;
             i++;
             Node tmp = x.child[i];
-            if (tmp.n == 2 * t - 1) {
+            if (tmp.keyCound >= 2 * maxCountKeys - 1) {
                 split(x, i, tmp);
                 if (k > x.key[i]) {
                     i++;
@@ -115,7 +117,6 @@ public class BAsteriskTree {
             }
             insertValue(x.child[i], k);
         }
-
     }
 
     public void show() {
@@ -125,11 +126,11 @@ public class BAsteriskTree {
     // Вывод на экран
     private void show(Node x) {
         assert (x == null);
-        for (int i = 0; i < x.n; i++) {
+        for (int i = 0; i < x.keyCound; i++) {
             System.out.print(x.key[i] + " ");
         }
         if (!x.isLeaf) {
-            for (int i = 0; i < x.n + 1; i++) {
+            for (int i = 0; i < x.keyCound + 1; i++) {
                 show(x.child[i]);
             }
         }
@@ -153,6 +154,7 @@ public class BAsteriskTree {
         b.insert(15);
         b.insert(20);
         b.insert(17);
+//        b.insert(21);
 
         b.show();
 
