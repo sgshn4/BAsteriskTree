@@ -11,6 +11,184 @@ public class BAsteriskTree {
         Node child[] = new Node[2 * t];
         boolean isLeaf = true;
 
+        public int findKey(int k) {
+            int idx = 0;
+            while (idx < keyCount && key[idx] < k) {
+                idx++;
+            }
+            return idx;
+        }
+
+        public void fill(int idx) {
+            if (idx != 0 && child[idx - 1].keyCount >= t) {
+                borrowFromPrev(idx);
+            } else if (idx != keyCount && child[idx + 1].keyCount >= t) {
+                borrowFromNext(idx);
+            } else {
+                if (idx != keyCount) {
+                    merge(idx);
+                } else {
+                    merge(idx - 1);
+                }
+            }
+        }
+
+        // Метод для получения предшественника ключа по индексу
+        public int getPred(int idx) {
+            Node curr = child[idx];
+            while (!curr.isLeaf) {
+                curr = curr.child[curr.keyCount];
+            }
+            return curr.key[curr.keyCount - 1];
+        }
+
+        // Метод для получения преемника ключа по индексу
+        public int getSucc(int idx) {
+            Node curr = child[idx + 1];
+            while (!curr.isLeaf) {
+                curr = curr.child[0];
+            }
+            return curr.key[0];
+        }
+
+        public void remove(int k) {
+            int idx = findKey(k);
+
+            if (idx < keyCount && key[idx] == k) {
+                if (isLeaf) {
+                    removeFromLeaf(idx);
+                } else {
+                    removeFromNonLeaf(idx);
+                }
+            } else {
+                if (isLeaf) {
+                    System.out.println("Ключ " + k + " не найден в узле");
+                    return;
+                }
+
+                boolean flag = (idx == keyCount);
+
+                if (child[idx].keyCount < t) {
+                    fill(idx);
+                }
+
+                if (flag && idx > keyCount) {
+                    child[idx - 1].remove(k); // Рекурсивный вызов метода remove для левого дочернего узла
+                } else {
+                    child[idx].remove(k);
+                }
+            }
+        }
+
+        // Метод для удаления ключа из листового узла по индексу
+        public void removeFromLeaf(int idx) {
+            for (int i = idx + 1; i < keyCount; i++) {
+                key[i - 1] = key[i];
+            }
+            keyCount--;
+        }
+
+        // Метод для удаления ключа из нелистового узла по индексу
+        public void removeFromNonLeaf(int idx) {
+            int k = key[idx];
+            if (child[idx].keyCount >= t) {
+                int pred = getPred(idx);
+                key[idx] = pred;
+                child[idx].remove(pred);
+            } else if (child[idx + 1].keyCount >= t) {
+                int succ = getSucc(idx);
+                key[idx] = succ;
+                child[idx + 1].remove(succ);
+            } else {
+                merge(idx);
+                child[idx].remove(k);
+            }
+        }
+
+        // Метод для заимствования ключа из предыдущего дочернего узла
+        public void borrowFromPrev(int idx) {
+            Node c = child[idx];
+            Node sibling = child[idx - 1];
+
+            for (int i = c.keyCount - 1; i >= 0; i--) {
+                c.key[i + 1] = c.key[i];
+            }
+
+            if (!c.isLeaf) {
+                for (int i = c.keyCount; i >= 0; i--) {
+                    c.child[i + 1] = c.child[i];
+                }
+            }
+
+            c.key[0] = key[idx - 1];
+
+            if (!c.isLeaf) {
+                c.child[0] = sibling.child[sibling.keyCount];
+            }
+
+            key[idx - 1] = sibling.key[sibling.keyCount - 1];
+
+            c.keyCount++;
+            sibling.keyCount--;
+        }
+
+        // Метод для заимствования ключа из следующего дочернего узла
+        public void borrowFromNext(int idx) {
+            Node c = child[idx];
+            Node sibling = child[idx + 1];
+
+            c.key[c.keyCount] = key[idx];
+
+            if (!c.isLeaf) {
+                c.child[c.keyCount + 1] = sibling.child[0];
+            }
+
+            key[idx] = sibling.key[0];
+
+            for (int i = 1; i < sibling.keyCount; i++) {
+                sibling.key[i - 1] = sibling.key[i];
+            }
+
+            if (!sibling.isLeaf) {
+                for (int i = 1; i <= sibling.keyCount; i++) {
+                    sibling.child[i - 1] = sibling.child[i];
+                }
+            }
+
+            c.keyCount++;
+            sibling.keyCount--;
+        }
+
+        // Метод для слияния дочернего узла с его следующим соседом
+        public void merge(int idx) {
+            Node c = child[idx];
+            Node sibling = child[idx + 1];
+
+            c.key[t - 1] = key[idx];
+
+            for (int i = 0; i < sibling.keyCount; i++) {
+                c.key[i + t] = sibling.key[i];
+            }
+
+            if (!c.isLeaf) {
+                for (int i = 0; i <= sibling.keyCount; i++) {
+                    c.child[i + t] = sibling.child[i];
+                }
+            }
+
+            for (int i = idx + 1; i < keyCount; i++) {
+                key[i - 1] = key[i];
+            }
+
+            for (int i = idx + 2; i <= keyCount; i++) {
+                child[i - 1] = child[i];
+            }
+
+            c.keyCount += sibling.keyCount + 1;
+            keyCount--;
+
+            sibling = null;
+        }
     }
 
     public BAsteriskTree(int t) {
@@ -141,51 +319,48 @@ public class BAsteriskTree {
     }
 
     public void remove(int k) {
-        if (contain(k)) {
-            Node removable = search(root, k);
-            if (removable.isLeaf) {
-                if (removable == root) {
-                    root = null;
-                    return;
-                }
-                int shift = 0;
-                for (int i = 0; i < removable.keyCount; i++) {
-                    if (removable.key[i] == k) {
-                        shift++;
-                        removable.keyCount--;
-                        if (i == removable.keyCount - 1) {
-                            removable.key[i] = 0;
-                        }
-                    }
-                    removable.key[i] = removable.key[i + shift];
-                }
+        if (root == null) {
+            System.out.println("The tree is empty");  // Если дерево пустое, выводим сообщение
+            return;
+        }
+        root = remove(root, k);
+
+        if (root.keyCount == 0) {  // Если корень больше не содержит ключей
+            if (root.isLeaf) {
+                root = null;  // Если корень листовой, делаем его null
+            } else {
+                root = root.child[0];  // Иначе корнем становится его единственный дочерний узел
             }
-        } else {
-            System.err.println("Key " + k + " not founded.");
         }
     }
 
-    public static void main(String[] args) {
-        BAsteriskTree b = new BAsteriskTree(4);
-        b.insert(8);
-        b.insert(9);
-        b.insert(10);
-        b.insert(11);
-        b.insert(15);
-        b.insert(20);
-        b.insert(17);
-        b.insert(21);
-        b.insert(35);
-        b.insert(1);
-        b.remove(15);
+    private Node remove(Node x, int k) {
+        int idx = x.findKey(k);  // Находим индекс ключа k в узле x
 
-        b.show();
-
-        if (b.contain(12)) {
-            System.out.println("\nнайдено");
+        if (idx < x.keyCount && x.key[idx] == k) {  // Если ключ найден в узле x
+            if (x.isLeaf) {
+                x.removeFromLeaf(idx);  // Удаляем ключ из листового узла
+            } else {
+                x.removeFromNonLeaf(idx);  // Удаляем ключ из нелистового узла
+            }
         } else {
-            System.out.println("\nне найдено");
+            if (x.isLeaf) {
+                System.out.println("The key " + k + " does not exist in the tree");  // Если ключ не найден и узел листовой, выводим сообщение
+                return x;
+            }
+
+            boolean flag = (idx == x.keyCount);  // Флаг для определения, находится ли индекс за пределами массива ключей
+
+            if (x.child[idx].keyCount < t) {  // Если дочерний узел содержит менее t ключей
+                x.fill(idx);  // Вызываем метод fill для заполнения дочернего узла
+            }
+
+            if (flag && idx > x.keyCount) {
+                x.child[idx - 1] = remove(x.child[idx - 1], k);  // Рекурсивно вызываем метод удаления для соответствующего дочернего узла
+            } else {
+                x.child[idx] = remove(x.child[idx], k);  // Рекурсивно вызываем метод удаления для соответствующего дочернего узла
+            }
         }
-        ;
+        return x;
     }
 }
